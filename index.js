@@ -21,7 +21,7 @@ exports.webp = (req, res) => {
         let servername = fields.servername;
         let options = JSON.parse(fields.options);
         let start = new Date();
-        sharp(buffer).webp({quality: options.quality}).toBuffer().then(function (data) {
+        sharp(buffer).webp({quality: options.quality, alphaQuality: options['alpha-quality']}).toBuffer().then(function (data) {
             let before = buffer.byteLength;
             let after = data.byteLength;
             let percent = Math.round((1 - (after / before)) * 100);
@@ -29,12 +29,15 @@ exports.webp = (req, res) => {
             let time = end.getTime() - start.getTime();
             res.send(data);
             console.log(`Converted: ${servername}, q=${options.quality}, -${percent}% from ${formatBytes(before)} to ${formatBytes(after)} in ${time} ms`);
+        }, function () {
+            console.log('Conversion failed: ' + servername);
+            res.status(403).end('Conversion failed!');
         })
     });
     busboy.end(req.rawBody);
 };
 
-function formatBytes(bytes, decimals = 1) {
+function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
